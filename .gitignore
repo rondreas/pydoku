@@ -1,3 +1,9 @@
-__pycache__\
+# Ignore all python compiled stuff
+__pycache__/
 
+# So I don't commit my swap files
 *.swp
+
+# I tend to save generated problems either as a txt or .problem
+*.txt
+*.problem
