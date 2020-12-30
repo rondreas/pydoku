@@ -83,7 +83,7 @@ class TestSolvers( unittest.TestCase ):
         self.assertIn( 5, candidates[24])
 
         # Run function to eliminate candidates,
-        eliminate_candidates(candidates)
+        eliminate_locked_candidates_pointing( candidates )
 
         # Value 5 should no longer be present in candidates at index 24.
         self.assertNotIn( 5, candidates[24] )
@@ -93,6 +93,6 @@ class TestSolvers( unittest.TestCase ):
         that candidate should be eliminated from all other cells in that block. """
         candidates = get_all_candidates( self.locked_candidates_problem_claiming )
         self.assertIn( 4, candidates[3])
-        eliminate_candidates(candidates)
+        eliminate_locked_candidates_claiming( candidates )
         self.assertNotIn( 4, candidates[3] )
 

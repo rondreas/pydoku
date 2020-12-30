@@ -281,55 +281,17 @@ def solve_hidden_singles( problem ):
                         print("Solved a hidden single at r{}c{}".format(which_row(index), which_column(index)))
 
 
-def find_unique_in_sublists( _list ):
-    """ Given a list of lists, iterate over each list and find if
-    it contains a value that can't be found in the other lists. """
-    unique_values = []
+def eliminate_locked_candidates_pointing( candidates ):
+    """ Eliminate candidates unique to row/column inside box, from rest of the row/column 
 
-    # Iterate and rotate list,
-    for index in range( len(_list) ):
-        rotated_list = _list[index::] + _list[:index]
+    We will be juggling two sets of candidates,
+      - candidates in the overlap
+      - candidates outside the overlap in box
 
-        # Using sets, find values in current first, that doesn't occur in others.
-        unique_values += list( recursive_flatten(rotated_list[0]) - recursive_flatten(rotated_list[1:]) )
+    When one is found to be in the overlap, but not rest of the box, we can
+    remove this candidate from the rest of the overlapping section,
 
-    return unique_values
-
-
-def recursive_flatten( l ):
-    """ Take list l, iterate over each element that is not of type list and
-    add to set s. Return set of all unique values in multidimensional list l."""
-
-    s = set()
-
-    for item in l:
-        if isinstance( item, list ):
-            s.update(recursive_flatten(item))
-        else:
-            s.add(item)
-    
-    return s
-
-
-def flatten( _list ):
-    """ Take a list with sublists, and return list of each element in sublists. """
-    return [item for sublist in _list for item in sublist]
-
-
-def _flatten( _list ):
-    """ Another method, but using python set() seeing how we can
-    do without duplicate values. """
-    s = set()
-    for sublist in _list:
-        s.update(set(sublist))
-    return list(s)
-
-
-def eliminate_candidates( candidates ):
-    """ """
-
-    # For each box, see if candidate is in a row/column
-    # If found, remove candidate from rest of row/column
+    """
 
     indices = [ index for index in range(81) ]
 
@@ -338,61 +300,92 @@ def eliminate_candidates( candidates ):
         box_candidates = get_box( box, candidates )
         box_indices = get_box( box, indices )
 
-        # r1, r2, r3 = [box_candidates[0:3], box_candidates[3:6], box_candidates[6:9]]
-        rows = [box_candidates[0:3], box_candidates[3:6], box_candidates[6:9]]
+        # Get overlapping rows,
+        overlapping_rows = { which_row(index) for index in box_indices }
 
-        # Get candidates for each row in box flattned,
-        r1, r2, r3 = [ set(x) for x in map( flatten, rows ) ]
+        # For each row overlapping with current box,
+        for row in overlapping_rows:
 
-        unique_values = find_unique_in_sublists([box_candidates[0:3], box_candidates[3:6], box_candidates[6:9]])
+            # get indices for row, 
+            row_indices = get_row( row, indices )
 
+            # get indices where row & box overlaps, 
+            box_row_indices = set( box_indices ) & set( row_indices )
 
-        values = set()
-        values.update( r1 - (r2 | r3) )
-        values.update( r2 - (r1 | r3) )
-        values.update( r3 - (r1 | r2) )
+            # get indices unique to box,
+            box_indices_excluding_row = set( box_indices ) - set( row_indices )
 
-        # rv = list()
-        # rv += list(set(flatten(r1)) - (set(flatten(r2))|set(flatten(r3))))
-        # rv += list(set(flatten(r2)) - (set(flatten(r1))|set(flatten(r3))))
-        # rv += list(set(flatten(r3)) - (set(flatten(r1))|set(flatten(r2))))
+            # get indices unique to row,
+            row_indices_excluding_box = set( row_indices ) - set( box_indices )
 
-        # For each value found, get row, and remove from rest of row ignoring ones contained in box
-        for v in unique_values:
-            # Store which index value is found at
-            value_indices = list()
+            # Get candidates in the overlap,
+            box_row_candidates = { candidate for index in box_row_indices for candidate in candidates[index] }
 
-            # index, candidate for box candidates enumerated.
-            for i, c in enumerate(box_candidates):
-                # If value in candidate,
-                if v in c:
-                    # Add index to list for where values are found.
-                    value_indices.append(box_indices[i])
+            # Get candidates outside of overlap,
+            box_excluding_row_candidates = { candidate for index in box_indices_excluding_row for candidate in candidates[index] }
 
-            # We only care about the first time we find it, seeing as all should share row number.
-            row_number = which_row(value_indices[0])
+            # Get which candidates are in overlap but not in the rest of box,
+            for candidate in (box_row_candidates - box_excluding_row_candidates):
+                # and remove these from the non-overlapping section
+                remove_candidates( candidate, candidates, row_indices_excluding_box )
 
-            # get list of indices for row, excluding current box
-            _indices = set(get_row(row_number, indices)) - set(box_indices)
+        # Same as above but going over columns this time,
+        overlapping_columns = { which_column(index) for index in box_indices }
 
-            # for index
-            for _i in _indices:
-                # sanity check, to see that value is actually in candidate list for index in grid
-                if v in candidates[_i]:
-                    # Remove value from candidates seeing how we eliminated the possibility of it being there.
-                    candidates[_i].remove(v)
+        for column in overlapping_columns:
 
-        # c1, c2, c3 = [box_candidates[0::3], box_candidates[1::3], box_candidates[2::3]]
-        # cv = list()
-        # cv += list(c1 - (c2|c3))
-        # cv += list(c2 - (c1|c3))
-        # cv += list(c3 - (c1|c2))
+            column_indices = get_column( column, indices )
 
-        # TODO - make sets for r1 r2 r3, c1, c2, c3, then example a - (b|c)
-        # how to flatten, flat_list = [item for sublist in list for item in sublist]
+            box_column_indices = set( box_indices ) & set( column_indices )
+            box_indices_excluding_column = set( box_indices ) - set( column_indices )
+            column_indices_excluding_box = set( column_indices ) - set( box_indices )
 
-    # For each row/column, see if candidate is only in one
-    # of the boxes, if so, remove from rest of the box but
-    # for the row/column
+            box_column_candidates = { candidate for index in box_column_indices for candidate in candidates[index] }
+            box_excluding_column_candidates = { candidate for index in box_indices_excluding_column for candidate in candidates[index] }
+
+            for candidate in (box_column_candidates - box_excluding_column_candidates):
+                remove_candidates( candidate, candidates, column_indices_excluding_box )
+
+def eliminate_locked_candidates_claiming( candidates ):
+
+    indices = [ index for index in range(81) ]
+
     for row in range(1, 10):
+        row_indices = get_row( row, indices )
         row_candidates = get_row( row, candidates )
+
+        overlapping_boxes = { which_box( index ) for index in row_indices }
+
+        for box in overlapping_boxes:
+
+            box_indices = get_box( box, indices )
+
+            overlapping_indices = set( row_indices ) & set( box_indices )
+            box_exlusive = set( box_indices ) - set( row_indices )
+            row_exlusive = set( row_indices ) - set( box_indices )
+
+            overlapping_candidates = { candidate for index in overlapping_indices for candidate in candidates[index] }
+            row_exlusive_candidates = { candidate for index in row_exlusive for candidate in candidates[index] }
+
+            for candidate in ( row_exlusive_candidates -  overlapping_candidates ):
+                remove_candidates( candidate, candidates, box_exlusive )
+
+    for column in range(1, 10):
+        column_indices = get_column( column, indices )
+        column_candidates = get_column( column, candidates )
+
+        overlapping_boxes = { which_box( index ) for index in column_indices }
+
+        for box in overlapping_boxes:
+
+            box_indices = get_box( box, indices )
+
+            overlapping_indices = set( column_indices ) & set( box_indices )
+            box_exlusive = set( box_indices ) - set( column_indices )
+            column_exlusive = set( column_indices ) - set( box_indices )
+
+            overlapping_candidates = { candidate for index in overlapping_indices for candidate in candidates[index] }
+            column_exlusive_candidates = { candidate for index in column_exlusive for candidate in candidates[index] }
+
+            for candidate in ( overlapping_candidates - column_exlusive_candidates ):
+                remove_candidates( candidate, candidates, box_exlusive )
