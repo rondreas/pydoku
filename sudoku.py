@@ -55,6 +55,9 @@ def remove_candidates( value, candidates, indices ):
         if value in candidates[index]:
             candidates[index].remove(value)
 
+            if DEBUG:
+                print("Removing {} from candidates in r{}c{}".format(value, which_row( index ), which_column( index )))
+
 
 def create():
     """ Generate a new sudoku puzzle. """
@@ -201,11 +204,17 @@ def get_all_candidates( problem ):
     return candidates
 
 
-def solve_naked_singles( problem ):
+def solve_naked_singles( problem, candidates=[] ):
     """ Check each cell in problem, and for any cell with only one
-    possible candidate, set the cell value. """
+    possible candidate, set the cell value. 
     
-    candidates = get_all_candidates( problem )
+    :param list problem: sudoku problem represented by a list with 81 numbers 0..9
+    :param list candidates: list of 81 sublists which store candidates for values in cells
+
+    """
+    
+    if not candidates:
+        candidates = get_all_candidates( problem )
 
     for index, cell in enumerate(candidates):
 
@@ -224,11 +233,12 @@ def hidden_singles_in_section( section_candidates ):
     return [value + 1 for value, count in enumerate(value_count) if count == 1]
 
 
-def solve_hidden_singles( problem ):
+def solve_hidden_singles( problem, candidates=[] ):
     """ Iterate over each section, if there is a candidate occuring only once in all cells
     for the section, set the cell to candidate. """
 
-    candidates = get_all_candidates( problem )
+    if not candidates:
+        candidates = get_all_candidates( problem )
 
     # For each row,
     for row in range(1, 10):
@@ -367,7 +377,7 @@ def eliminate_locked_candidates_claiming( candidates ):
             overlapping_candidates = { candidate for index in overlapping_indices for candidate in candidates[index] }
             row_exlusive_candidates = { candidate for index in row_exlusive for candidate in candidates[index] }
 
-            for candidate in ( row_exlusive_candidates -  overlapping_candidates ):
+            for candidate in ( overlapping_candidates - row_exlusive_candidates ):
                 remove_candidates( candidate, candidates, box_exlusive )
 
     for column in range(1, 10):
@@ -389,3 +399,55 @@ def eliminate_locked_candidates_claiming( candidates ):
 
             for candidate in ( overlapping_candidates - column_exlusive_candidates ):
                 remove_candidates( candidate, candidates, box_exlusive )
+
+
+def hidden_subset( candidates ):
+
+    def _hidden_subset( section_indices ):
+        # Get all occuring candiate values in section,
+        section_candidates = [ candidate for index in section_indices for candidate in candidates[index] ]
+
+        # Get a dict with all candidates, and number times they are found
+        # TODO: replace with collections.Counter
+        occurences = { candidate: section_candidates.count(candidate) for candidate in set(section_candidates) }
+
+        # for each number of times a candidate has been found,
+        for times_found in set(occurences.values()):
+
+            # set of the candidates which occurs times_found times in section,
+            subset = { k for k,v in occurences.items() if v == times_found }
+
+            # Iterate over section,
+            for index in section_indices:
+                # Get set overlap between subset and current cell candidates,
+                overlap = subset & set(candidates[index])
+
+                if len(overlap) != times_found:
+                    continue
+
+                _indices = [index]
+
+                for other_index in section_indices:
+                    if index == other_index:
+                        continue
+
+                    other_overlap = subset & set(candidates[other_index])
+
+                    if overlap == other_overlap:
+                        _indices.append(other_index)
+
+                if len(_indices) == times_found:
+                    # eliminate all values but the overlap from cells
+                    for value in { x for x in range(1, 10) } - overlap:
+                        remove_candidates( value, candidates, _indices )
+
+    indices = [ index for index in range(81) ]
+
+    for section in range(1, 10):
+        row_indices = get_row( section, indices )
+        column_indices = get_column( section, indices )
+        box_indices = get_box( section, indices )
+
+        _hidden_subset( row_indices )
+        _hidden_subset( column_indices )
+        _hidden_subset( box_indices )

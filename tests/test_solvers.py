@@ -49,12 +49,35 @@ class TestSolvers( unittest.TestCase ):
                                               2, 9, 7, 6, 8, 5, 3, 1, 4,
                                               6, 4, 1, 9, 3, 2, 7, 5, 8]
 
+        hidden_pair_problem = [0, 4, 9, 1, 3, 2, 0, 0, 0, 
+                               0, 8, 1, 4, 7, 9, 0, 0, 0,
+                               3, 2, 7, 6, 8, 5, 9, 1, 4,
+                               0, 9, 6, 0, 5, 1, 8, 0, 0,
+                               0, 7, 5, 0, 2, 8, 0, 0, 0,
+                               0, 3, 8, 0, 4, 6, 0, 0, 5,
+                               8, 5, 3, 2, 6, 7, 0, 0, 0,
+                               7, 1, 2, 8, 9, 4, 5, 6, 3,
+                               9, 6, 4, 5, 1, 3, 0, 0, 0]
+
+        hidden_triple_problem = [2, 8, 0, 0, 0, 0, 4, 7, 3,
+                                 5, 3, 4, 8, 2, 7, 1, 9, 6,
+                                 0, 7, 1, 0, 3, 4, 0, 8, 0,
+                                 3, 0, 0, 5, 0, 0, 0, 4, 0,
+                                 0, 0, 0, 3, 4, 0, 0, 6, 0,
+                                 4, 6, 0, 7, 9, 0, 3, 1, 0,
+                                 0, 9, 0, 2, 0, 3, 6, 5, 4,
+                                 0, 0, 3, 0, 0, 9, 8, 2, 1,
+                                 0, 0, 0, 0, 8, 0, 9, 3, 7]
+
 
         # Cast each number in the previous problems to a string.
         self.naked_singles_problem = [num for num in naked_singles_problem]
         self.hidden_singles_problem = [num for num in hidden_singles_problem]
         self.locked_candidates_problem_pointing = [num for num in locked_candidates_problem_pointing]
         self.locked_candidates_problem_claiming = [num for num in locked_candidates_problem_claiming]
+        self.hidden_pair_problem = [num for num in hidden_pair_problem]
+        self.hidden_triple_problem = [num for num in hidden_triple_problem]
+
 
     def test_solve_naked_singles( self ):
         """ Attempt solving a given problem using the naked singles method. """
@@ -64,12 +87,17 @@ class TestSolvers( unittest.TestCase ):
         # 77th cell is known to be solvable to 6 using this method.
         self.assertEqual( 6, self.naked_singles_problem[77] )
 
+
     def test_solve_hidden_singles( self ):
         """ Attempt solving a given problem using the hidden singles method. """
 
         solve_hidden_singles( self.hidden_singles_problem )
 
         self.assertEqual( 6, self.hidden_singles_problem[21] )
+
+
+    # Methods of eliminating candidates
+
 
     def test_eliminate_locked_candidates_pointing( self ):
         """ Attempt elimination of candidates using methods where if a value in one box
@@ -88,6 +116,7 @@ class TestSolvers( unittest.TestCase ):
         # Value 5 should no longer be present in candidates at index 24.
         self.assertNotIn( 5, candidates[24] )
 
+
     def test_eliminate_locked_candidates_claiming( self ):
         """ If in a row or column all candidates of certain digit are confined to one block,
         that candidate should be eliminated from all other cells in that block. """
@@ -96,3 +125,18 @@ class TestSolvers( unittest.TestCase ):
         eliminate_locked_candidates_claiming( candidates )
         self.assertNotIn( 4, candidates[3] )
 
+        
+    def test_hidden_subset_pair( self ):
+        candidates = get_all_candidates( self.hidden_pair_problem )
+        self.assertIn( 6, candidates[44] )
+        hidden_subset( candidates )
+        self.assertNotIn( 6, candidates[44] )
+
+
+    def test_hidden_subset_triple( self ):
+        candidates = get_all_candidates( self.hidden_triple_problem )
+        self.assertIn( 1, candidates[73] )
+        self.assertIn( 6, candidates[74] )
+        hidden_subset( candidates )
+        self.assertNotIn( 1, candidates[73] )
+        self.assertNotIn( 6, candidates[74] )
