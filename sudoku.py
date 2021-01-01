@@ -459,3 +459,26 @@ def hidden_subset( candidates, section_indices, depth ):
             for value in { x for x in range(1, 10) } - subset:
                 remove_candidates( value, candidates, subset_indices )
 
+def naked_subset( candidates, section_indices, depth ):
+    # TODO: Keep DRY, see if hidden and naked can be refactored into one,
+    
+    # remove indices without candidates, ie ones with set value,
+    candidate_indices = [ index for index in section_indices if candidates[index] ]
+
+    # iterate over all combinations of candidate cells in section
+    for subset_indices in subsets( candidate_indices, 0, depth, 0 ):
+
+        # get indices for all cells but for the subset
+        other_indices = set(candidate_indices) - subset_indices
+
+        # all candidates not in the subset of the section
+        other_candidates = { candidate for index in other_indices for candidate in candidates[index] }
+
+        # all candidates in the current subset of section
+        subset_candidates = { candidate for index in subset_indices for candidate in candidates[index] }
+
+        # subset = subset_candidates - other_candidates
+        
+        if len(subset_candidates) == depth:
+            for value in subset_candidates:
+                remove_candidates( value, candidates, other_indices )

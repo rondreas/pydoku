@@ -79,12 +79,34 @@ class TestSolvers( unittest.TestCase ):
                                     0, 0, 0, 7, 0, 9, 0, 0, 0,
                                     0, 9, 5, 0, 0, 0, 4, 7, 0]
 
+        self.naked_subset_pair_problem = [7, 0, 0, 8, 4, 9, 0, 3, 0,
+                                          9, 2, 8, 1, 3, 5, 0, 0, 6,
+                                          4, 0, 0, 2, 6, 7, 0, 8, 9,
+                                          6, 4, 2, 7, 8, 3, 9, 5, 1,
+                                          3, 9, 7, 4, 5, 1, 6, 2, 8,
+                                          8, 1, 5, 6, 9, 2, 3, 0, 0,
+                                          2, 0, 4, 5, 1, 6, 0, 9, 3,
+                                          1, 0, 0, 0, 0, 8, 0, 6, 0,
+                                          5, 0, 0, 0, 0, 4, 0, 1, 0]
+
+        self.locked_subset_pair_problem = [0, 5, 0, 1, 3, 4, 6, 0, 0,
+                                           0, 9, 0, 6, 5, 2, 1, 3, 8,
+                                           0, 3, 0, 8, 7, 9, 0, 4, 0,
+                                           2, 1, 5, 0, 0, 3, 0, 0, 6,
+                                           0, 8, 0, 2, 6, 1, 3, 5, 0,
+                                           3, 6, 0, 0, 8, 5, 9, 2, 1,
+                                           0, 4, 0, 0, 2, 7, 0, 1, 3,
+                                           0, 7, 3, 0, 0, 6, 0, 0, 0,
+                                           0, 2, 0, 3, 0, 8, 7, 6, 0]
+
 
         # Cast each number in the previous problems to a string.
         self.naked_singles_problem = [num for num in naked_singles_problem]
         self.hidden_singles_problem = [num for num in hidden_singles_problem]
+
         self.locked_candidates_problem_pointing = [num for num in locked_candidates_problem_pointing]
         self.locked_candidates_problem_claiming = [num for num in locked_candidates_problem_claiming]
+
         self.hidden_pair_problem = [num for num in hidden_pair_problem]
         self.hidden_triple_problem = [num for num in hidden_triple_problem]
 
@@ -165,3 +187,31 @@ class TestSolvers( unittest.TestCase ):
         column_indices = get_column( 9, [ x for x in range(81) ] ) 
         hidden_subset( candidates, column_indices, 4 )
         assert not {6, 7} <= set(candidates[8]), "6 & 7 are still in {}".format(candidates[8])
+
+    def test_naked_subset_pair( self ):
+        candidates = get_all_candidates( self.naked_subset_pair_problem )
+        cell_index = which_index( row = 8, column = 2 )
+        row_indices = get_row( 8, [ x for x in range(81) ] )
+
+        assert {3, 7} == set( candidates[cell_index] ), "3, 7 != {}".format(candidates[cell_index])
+
+        naked_subset( candidates, row_indices, 2 )
+
+        assert not 3 in candidates[cell_index], "We failed to eliminate the three from r8c2."
+
+
+    def test_locked_subset_pair( self ):
+        candidates = get_all_candidates( self.locked_subset_pair_problem )
+
+        assert {1, 2, 6} == set(candidates[which_index(3, 3)])
+        assert {2, 7, 9} == set(candidates[which_index(1, 9)])
+
+        # Get all indices for the sudoku grid,
+        # then the important indices for row 3 and box 3
+        all_indices = [ x for x in range(81) ]
+        indices = list(set(get_row(3, all_indices)) | set(get_box(3, all_indices)))
+
+        naked_subset( candidates, indices, 2 )
+
+        assert {1, 6} == set(candidates[which_index(3, 3)])
+        assert {7, 9} == set(candidates[which_index(1, 9)])
