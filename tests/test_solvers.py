@@ -69,6 +69,16 @@ class TestSolvers( unittest.TestCase ):
                                  0, 0, 3, 0, 0, 9, 8, 2, 1,
                                  0, 0, 0, 0, 8, 0, 9, 3, 7]
 
+        self.hidden_quad_problem = [0, 3, 0, 0, 0, 0, 0, 1, 0,
+                                    0, 0, 8, 0, 9, 0, 0, 0, 0,
+                                    4, 0, 0, 6, 0, 8, 0, 0, 0,
+                                    0, 0, 0, 5, 7, 6, 9, 4, 0,
+                                    0, 0, 0, 9, 8, 3, 5, 2, 0,
+                                    0, 0, 0, 1, 2, 4, 0, 0, 0,
+                                    2, 7, 6, 0, 0, 5, 1, 9, 0,
+                                    0, 0, 0, 7, 0, 9, 0, 0, 0,
+                                    0, 9, 5, 0, 0, 0, 4, 7, 0]
+
 
         # Cast each number in the previous problems to a string.
         self.naked_singles_problem = [num for num in naked_singles_problem]
@@ -129,7 +139,8 @@ class TestSolvers( unittest.TestCase ):
     def test_hidden_subset_pair( self ):
         candidates = get_all_candidates( self.hidden_pair_problem )
         self.assertIn( 6, candidates[44] )
-        hidden_subset( candidates )
+        column_indices = get_column( 9, [ x for x in range(81) ] )
+        hidden_subset( candidates, column_indices, 2 )
         self.assertNotIn( 6, candidates[44] )
 
 
@@ -137,6 +148,20 @@ class TestSolvers( unittest.TestCase ):
         candidates = get_all_candidates( self.hidden_triple_problem )
         self.assertIn( 1, candidates[73] )
         self.assertIn( 6, candidates[74] )
-        hidden_subset( candidates )
+        box_indices = get_box( 7, [ x for x in range(81) ] ) 
+        hidden_subset( candidates, box_indices, 3 )
         self.assertNotIn( 1, candidates[73] )
         self.assertNotIn( 6, candidates[74] )
+
+
+    def test_hidden_subset_quad( self ):
+        candidates = get_all_candidates( self.hidden_quad_problem )
+
+        eliminate_locked_candidates_pointing( candidates )
+        eliminate_locked_candidates_claiming( candidates )
+
+        assert {2, 4, 5, 6, 7, 8, 9} == set(candidates[8]), "We failed to get correct candidates for r1c9"
+
+        column_indices = get_column( 9, [ x for x in range(81) ] ) 
+        hidden_subset( candidates, column_indices, 4 )
+        assert not {6, 7} <= set(candidates[8]), "6 & 7 are still in {}".format(candidates[8])

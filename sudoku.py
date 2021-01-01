@@ -406,53 +406,56 @@ def eliminate_locked_candidates_claiming( candidates ):
                 remove_candidates( candidate, candidates, box_exlusive )
 
 
-def hidden_subset( candidates ):
+def subsets( s, pos, depth, start_pos ):
+    """ recursively find all subsets from a given set s,
 
-    def _hidden_subset( section_indices ):
-        # Get all occuring candiate values in section,
-        section_candidates = [ candidate for index in section_indices for candidate in candidates[index] ]
+    :param s:
+    :param pos:
+    :param depth:
+    :param start_pos:
 
-        # Get a dict with all candidates, and number times they are found
-        # TODO: replace with collections.Counter
-        occurences = { candidate: section_candidates.count(candidate) for candidate in set(section_candidates) }
+    https://stackoverflow.com/questions/20614876/find-all-unique-subsets-of-a-set-of-values
 
-        # for each number of times a candidate has been found,
-        for times_found in set(occurences.values()):
+    """
+    if pos == depth:
+        yield { s[i] for i in range(depth) }
 
-            # set of the candidates which occurs times_found times in section,
-            subset = { k for k,v in occurences.items() if v == times_found }
+    for i in range(start_pos, len(s)):
 
-            # Iterate over section,
-            for index in section_indices:
-                # Get set overlap between subset and current cell candidates,
-                overlap = subset & set(candidates[index])
+        if (depth - pos + i) > len(s):
+            return
 
-                if len(overlap) != times_found:
-                    continue
+        tmp = s[pos]
+        s[pos] = s[i]
+        s[i] = tmp
 
-                _indices = [index]
+        yield from subsets( s, pos + 1, depth, i+1 )
 
-                for other_index in section_indices:
-                    if index == other_index:
-                        continue
+        tmp = s[pos]
+        s[pos] = s[i]
+        s[i] = tmp
 
-                    other_overlap = subset & set(candidates[other_index])
 
-                    if overlap == other_overlap:
-                        _indices.append(other_index)
+def hidden_subset( candidates, section_indices, depth ):
 
-                if len(_indices) == times_found:
-                    # eliminate all values but the overlap from cells
-                    for value in { x for x in range(1, 10) } - overlap:
-                        remove_candidates( value, candidates, _indices )
+    # remove indices without candidates, ie ones with set value,
+    candidate_indices = [ index for index in section_indices if candidates[index] ]
 
-    indices = [ index for index in range(81) ]
+    # iterate over all combinations of candidate cells in section
+    for subset_indices in subsets( candidate_indices, 0, depth, 0 ):
 
-    for section in range(1, 10):
-        row_indices = get_row( section, indices )
-        column_indices = get_column( section, indices )
-        box_indices = get_box( section, indices )
+        # get indices for all cells but for the subset
+        other_indices = set(candidate_indices) - subset_indices
 
-        _hidden_subset( row_indices )
-        _hidden_subset( column_indices )
-        _hidden_subset( box_indices )
+        # all candidates not in the subset of the section
+        other_candidates = { candidate for index in other_indices for candidate in candidates[index] }
+
+        # all candidates in the current subset of section
+        subset_candidates = { candidate for index in subset_indices for candidate in candidates[index] }
+
+        subset = subset_candidates - other_candidates
+        
+        if len(subset) == depth:
+            for value in { x for x in range(1, 10) } - subset:
+                remove_candidates( value, candidates, subset_indices )
+
