@@ -101,6 +101,22 @@ class TestProblem( unittest.TestCase ):
     def test_get_box_of_index_70( self ):
         self.assertEqual( 9, which_box( 70 ) )
 
+    #####################
+    # which_index tests #
+    #####################
+
+    def test_get_which_index_row_1_column_1( self ):
+        self.assertEqual( 0, which_index( 1, 1 ) )
+
+    def test_get_which_index_row_2_column_1( self ):
+        self.assertEqual( 9, which_index( 2, 1 ) )
+
+    def test_get_which_index_row_3_column_9( self ):
+        self.assertEqual( 26, which_index( 3, 9 ) )
+
+    def test_get_which_index_row_9_column_9( self ):
+        self.assertEqual( 80, which_index( 9, 9 ) )
+
     #################
     # get_row tests #
     #################

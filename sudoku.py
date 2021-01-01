@@ -146,6 +146,11 @@ def which_box( index ):
     return ((index % 9 // 3 + 1) + (index // 27 * 3))
 
 
+def which_index( row, column ):
+    """ Given a row, column return the index. """
+    return row * 9 + column - 10
+
+
 def get_row( row, problem ):
     """ Return row of a sudoku problem. """
     return problem[ row * 9 - 9 : row * 9 ]
