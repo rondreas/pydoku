@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from itertools import chain
 from sudoku import *
 import unittest
 
@@ -209,3 +210,15 @@ class TestProblem( unittest.TestCase ):
 
     def test_get_ninth_box( self ):
         self.assertEqual( [60, 61, 62, 69, 70, 71, 78, 79, 80], get_box( 9, self.problem ) ) 
+
+    ####################
+    ####################
+
+    def test_remove_candidates( self ):
+        candidates = [
+            [],
+            [1,2,6,8,9],
+            [4,6,7,8,9],
+        ]
+        remove_candidates( 8, candidates, [0,1,2] )
+        self.assertFalse(8 in chain(*candidates))
